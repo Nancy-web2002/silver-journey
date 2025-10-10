@@ -45,7 +45,7 @@ def create_shipment():
     data = request.get_json()
     tracking_code = generate_tracking_code()
 
-    shipment = Shipment.id(
+    shipment = Shipment(
         tracking_code=tracking_code,
         sender_name=data['sender_name'],
         receiver_name=data['receiver_name'],
