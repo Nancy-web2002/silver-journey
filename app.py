@@ -1,14 +1,14 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
 import random, string
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/x": {"origins": "x"}})
 
 # === DATABASE CONFIG ===
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'  # or your PostgreSQL URI on Render
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/shipments.db'  # or your PostgreSQL URI on Render
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
