@@ -7,7 +7,7 @@ import random, string
 app = Flask(__name__)
 
 # ✅ Allow all origins — including localhost for testing
-CORS(app, resources={r"/": {"origins": ""}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
@@ -45,6 +45,13 @@ class Shipment(db.Model):
 
     def to_dict(self):
         return {c.name: getattr(self, c.name) for c in self.columns}
+
+@app.after_request
+def add_cors_headers(response):
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+    return response
 
 # === ROUTES ===
 
@@ -100,7 +107,11 @@ def create_shipment():
 # ✅ Handle browser CORS preflight requests (OPTIONS)
 @app.route("/create_shipment", methods=["OPTIONS"])
 def shipment_options():
-    return "", 200
+    reponse = jsonify({"status": "OK"})
+    reponse.headers.add("Access-Control-Allow-Origin", "*")
+    reponse.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    reponse.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+    return reponse, 200
 
 
 # ✅ Track shipment by tracking code
