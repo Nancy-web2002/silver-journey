@@ -16,35 +16,47 @@ db = SQLAlchemy(app)
 # === MODEL ===
 class Shipment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tracking_code = db.Column(db.String(20), unique=True, nullable=False)
-    shipper_name = db.Column(db.String(120))
-    shipper_address = db.Column(db.String(200))
-    receiver_name = db.Column(db.String(120))
-    receiver_address = db.Column(db.String(200))
-    receiver_phone = db.Column(db.String(50))
-    receiver_email = db.Column(db.String(120))
-    origin = db.Column(db.String(120))
-    destination = db.Column(db.String(120))
-    carrier = db.Column(db.String(50))
-    shipment_type = db.Column(db.String(50))
-    weight = db.Column(db.String(50))
-    shipment_mode = db.Column(db.String(50))
-    carrier_ref_no = db.Column(db.String(100))
-    product = db.Column(db.String(200))
-    qty = db.Column(db.Integer)
-    payment_mode = db.Column(db.String(50))
-    total_freight = db.Column(db.String(50))
-    expected_delivery = db.Column(db.String(50))
-    departure_time = db.Column(db.String(50))
-    pickup_date = db.Column(db.String(50))
-    pickup_time = db.Column(db.String(50))
-    comments = db.Column(db.String(500))
-    status = db.Column(db.String(50), default="On Hold")
-    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+    tracking_code = db.Column(db.String(100), unique=True, nullable=False)
+    shipper_name = db.Column(db.String(100))
+    receiver_name = db.Column(db.String(100))
+    status = db.Column(db.String(100))
+    origin = db.Column(db.String(100))
+    destination = db.Column(db.String(100))
+    carrier = db.Column(db.String(100))
+    expected_delivery = db.Column(db.String(100))
+    history = db.relationship('ShipmentHistory', backref='shipment', lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.columns}
+        return {
+            "tracking_code": self.tracking_code,
+            "status": self.status,
+            "origin": self.origin,
+            "destination": self.destination,
+            "carrier": self.carrier,
+            "expected_delivery": self.expected_delivery,
+            "history": [h.to_dict() for h in self.history]
+        }
 
+
+class ShipmentHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
+    date = db.Column(db.String(50))
+    time = db.Column(db.String(50))
+    location = db.Column(db.String(100))
+    status = db.Column(db.String(100))
+    updated_by = db.Column(db.String(100))
+    remarks = db.Column(db.String(200))
+
+    def to_dict(self):
+        return {
+            "date": self.date,
+            "time": self.time,
+            "location": self.location,
+            "status": self.status,
+            "updated_by": self.updated_by,
+            "remarks": self.remarks
+        }
 @app.after_request
 def add_cors_headers(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
@@ -140,24 +152,36 @@ def track_shipment_options(tracking_code):
   return '',200
 
 # ✅ Update shipment status or details (Admin)
-@app.route("/update_shipment/<tracking_code>", methods=["POST"])
+@app.route('/update_shipment/<tracking_code>', methods=['POST'])
 def update_shipment(tracking_code):
-    data = request.get_json()
     shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
     if not shipment:
         return jsonify({"message": "Shipment not found"}), 404
 
-    for key, value in data.items():
-        if hasattr(shipment, key):
-            setattr(shipment, key, value)
+    data = request.get_json()
+    new_location = data.get("location")
+    new_status = data.get("status")
+    updated_by = data.get("updated_by", "Admin")
+    remarks = data.get("remarks", "")
 
+    # Update current status
+    shipment.status = new_status
+
+    # Add to shipment history
+    now = datetime.now()
+    new_history = ShipmentHistory(
+        shipment=shipment,
+        date=now.strftime("%Y-%m-%d"),
+        time=now.strftime("%I:%M %p"),
+        location=new_location,
+        status=new_status,
+        updated_by=updated_by,
+        remarks=remarks
+    )
+    db.session.add(new_history)
     db.session.commit()
-    return jsonify({"message": "Shipment updated successfully"}), 200
 
-@app.route("/update_shipment/<tracking_code>", methods=["OPTIONS"])
-def update_shipment_options(tracking_code):
-  return '',200
-
+    return jsonify({"message": "Shipment updated successfully"})
 
 # === INITIALIZE DATABASE ===
 with app.app_context():
