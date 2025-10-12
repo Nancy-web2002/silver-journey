@@ -8,7 +8,8 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # === DATABASE CONFIG ===
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'  # use SQLite for local; PostgreSQL for Render
+db_path = os.path.join('/tmp','shipments.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'  # use SQLite for local; PostgreSQL for Render
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
