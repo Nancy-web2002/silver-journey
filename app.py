@@ -72,49 +72,46 @@ def home():
 
 
 # ✅ Create new shipment
-@app.route("/create_shipment", methods=["POST"])
+@app.route('/create_shipment', methods=['POST'])
 def create_shipment():
     data = request.get_json()
 
-    # Generate random tracking code
+    # Generate unique tracking code
     tracking_code = "AWB" + ''.join(random.choices(string.digits, k=12))
 
     new_shipment = Shipment(
         tracking_code=tracking_code,
         shipper_name=data.get("shipper_name"),
-        shipper_address=data.get("shipper_address"),
         receiver_name=data.get("receiver_name"),
-        receiver_address=data.get("receiver_address"),
-        receiver_phone=data.get("receiver_phone"),
-        receiver_email=data.get("receiver_email"),
+        status=data.get("status", "Pending"),
         origin=data.get("origin"),
         destination=data.get("destination"),
         carrier=data.get("carrier"),
-        shipment_type=data.get("shipment_type"),
-        weight=data.get("weight"),
-        shipment_mode=data.get("shipment_mode"),
-        carrier_ref_no=data.get("carrier_ref_no"),
-        product=data.get("product"),
-        qty=data.get("qty"),
-        payment_mode=data.get("payment_mode"),
-        total_freight=data.get("total_freight"),
-        expected_delivery=data.get("expected_delivery"),
-        departure_time=data.get("departure_time"),
-        pickup_date=data.get("pickup_date"),
-        pickup_time=data.get("pickup_time"),
-        comments=data.get("comments"),
-        status=data.get("status", "On Hold")
+        expected_delivery=data.get("expected_delivery")
     )
 
     db.session.add(new_shipment)
     db.session.commit()
 
+    # Optionally add the first entry in the shipment history
+    now = datetime.now()
+    first_history = ShipmentHistory(
+        shipment_id=new_shipment.id,
+        date=now.strftime("%Y-%m-%d"),
+        time=now.strftime("%I:%M %p"),
+        location=data.get("origin", "Origin"),
+        status=data.get("status", "Pending"),
+        updated_by="Admin",
+        remarks="Shipment created"
+    )
+
+    db.session.add(first_history)
+    db.session.commit()
+
     return jsonify({
         "message": "Shipment created successfully",
         "tracking_code": tracking_code
-    }), 200
-
-
+    }), 201
 # ✅ Handle browser CORS preflight requests (OPTIONS)
 @app.route("/create_shipment", methods=["OPTIONS"])
 def shipment_options():
@@ -170,7 +167,7 @@ def update_shipment(tracking_code):
     # Add to shipment history
     now = datetime.now()
     new_history = ShipmentHistory(
-        shipment=shipment,
+        shipment_id=shipment.id,
         date=now.strftime("%Y-%m-%d"),
         time=now.strftime("%I:%M %p"),
         location=new_location,
@@ -181,7 +178,7 @@ def update_shipment(tracking_code):
     db.session.add(new_history)
     db.session.commit()
 
-    return jsonify({"message": "Shipment updated successfully"})
+    return jsonify({"message": "Shipment updated successfully"}), 200
 
 # === INITIALIZE DATABASE ===
 with app.app_context():
