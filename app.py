@@ -6,10 +6,8 @@ import random, string
 
 app = Flask(__name__)
 
-# ✅ Allow all origins — including localhost for testing
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-CORS(app)
-
+# ✅ Correct CORS setup
+CORS(app, origins=["http://127.0.0.1:5501", "https://stockbridge-0c44.onrender.com"])
 # === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
