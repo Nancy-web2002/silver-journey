@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 # ✅ Allow all origins — including localhost for testing
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app)
 
 # === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
@@ -136,6 +137,9 @@ def track_shipment(tracking_code):
         print(f"Error tracking shipment: {e}")
         return jsonify({"message": "Server error"}), 500
 
+@app.route("/track_shipment/<tracking_code>", methods=["OPTIONS"])
+def track_shipment_options(tracking_code):
+  return '',200
 
 # ✅ Update shipment status or details (Admin)
 @app.route("/update_shipment/<tracking_code>", methods=["PUT"])
