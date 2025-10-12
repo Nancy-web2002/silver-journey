@@ -6,8 +6,8 @@ import random, string
 
 app = Flask(__name__)
 
-# ✅ Correct CORS setup
-CORS(app, origins=["http://127.0.0.1:5501", "https://stockbridge-0c44.onrender.com"])
+# ✅ Allow both local testing and your deployed frontend
+CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5501", "https://stockbridge-0c44.onrender.com"]}})
 # === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -140,7 +140,7 @@ def track_shipment_options(tracking_code):
   return '',200
 
 # ✅ Update shipment status or details (Admin)
-@app.route("/update_shipment/<tracking_code>", methods=["PUT"])
+@app.route("/update_shipment/<tracking_code>", methods=["POST"])
 def update_shipment(tracking_code):
     data = request.get_json()
     shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
@@ -153,6 +153,10 @@ def update_shipment(tracking_code):
 
     db.session.commit()
     return jsonify({"message": "Shipment updated successfully"}), 200
+
+@app.route("/update_shipment/<tracking_code>", methods=["OPTIONS"])
+def update_shipment_options(tracking_code):
+  return '',200
 
 
 # === INITIALIZE DATABASE ===
