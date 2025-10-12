@@ -6,7 +6,7 @@ import random, string
 
 app = Flask(__name__)
 
-CORS (app, resources={r"/*": {"origins": "*"}})
+CORS (app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
