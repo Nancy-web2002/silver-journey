@@ -5,14 +5,35 @@ from datetime import datetime
 import random, string
 
 app = Flask(__name__)
-CORS(app, resources={r"/x": {"origins": "x"}})
+CORS(app, resources={r"/": {"origins": ""}})
 
 # === DATABASE CONFIG ===
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/shipments.db'  # or your PostgreSQL URI on Render
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/shipments.db'  # use SQLite for local; PostgreSQL for Render
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # === MODELS ===
+
+class ShipmentHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
+    date = db.Column(db.String(50))
+    time = db.Column(db.String(50))
+    location = db.Column(db.String(100))
+    status = db.Column(db.String(100))
+    updated_by = db.Column(db.String(100))
+    remarks = db.Column(db.String(200))
+
+    def to_dict(self):
+        return {
+            "date": self.date,
+            "time": self.time,
+            "location": self.location,
+            "status": self.status,
+            "updated_by": self.updated_by,
+            "remarks": self.remarks
+        }
+
 class Shipment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tracking_code = db.Column(db.String(100), unique=True, nullable=False)
@@ -38,7 +59,6 @@ class Shipment(db.Model):
     comments = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationship to shipment history
     history = db.relationship('ShipmentHistory', backref='shipment', lazy=True)
 
     def to_dict(self):
@@ -65,37 +85,14 @@ class Shipment(db.Model):
             "status": self.status,
             "comments": self.comments,
             "created_at": self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-            
-        }
-
-
-class ShipmentHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
-    date = db.Column(db.String(50))
-    time = db.Column(db.String(50))
-    location = db.Column(db.String(100))
-    status = db.Column(db.String(100))
-    updated_by = db.Column(db.String(100))
-    remarks = db.Column(db.String(200))
-
-    def to_dict(self):
-        return {
-            "date": self.date,
-            "time": self.time,
-            "location": self.location,
-            "status": self.status,
-            "updated_by": self.updated_by,
-            "remarks": self.remarks
+            "history": [h.to_dict() for h in self.history]  # ✅ include history
         }
 
 # === ROUTES ===
-
 @app.route('/')
 def home():
     return jsonify({"message": "Stockbridge backend running successfully!"})
 
-# CREATE SHIPMENT
 @app.route('/create_shipment', methods=['POST'])
 def create_shipment():
     data = request.get_json() or {}
@@ -131,7 +128,6 @@ def create_shipment():
     return jsonify({"message": "Shipment created successfully!", "tracking_code": tracking_code}), 201
 
 
-# TRACK SHIPMENT
 @app.route('/track_shipment/<tracking_code>', methods=['GET'])
 def track_shipment(tracking_code):
     shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
@@ -140,7 +136,6 @@ def track_shipment(tracking_code):
     return jsonify(shipment.to_dict()), 200
 
 
-# ADD SHIPMENT HISTORY
 @app.route('/update_shipment/<tracking_code>', methods=['POST'])
 def update_shipment(tracking_code):
     shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
@@ -167,7 +162,7 @@ def update_shipment(tracking_code):
     return jsonify({"message": "Shipment updated successfully!"}), 200
 
 
-if __name__== '_main_':
+if __name__ == '_main_':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
