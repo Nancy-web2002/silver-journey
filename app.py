@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, jsonify, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
@@ -83,6 +83,11 @@ def create_shipment():
     db.session.commit()
 
     return redirect(url_for('view_shipment', tracking_code=shipment.tracking_code))
+    return jsonify ({...}) , 200
+    # ✅ Handle browser preflight requests (CORS)
+@app.route('/create_shipment', methods=['OPTIONS'])
+def shipment_options():
+    return '', 200
 
 @app.route('/shipment/<tracking_code>')
 def view_shipment(tracking_code):
