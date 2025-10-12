@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template, request, redirect, url_for
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
@@ -6,30 +6,32 @@ import random, string
 
 app = Flask(__name__)
 
-CORS (app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# ✅ Allow all origins — including localhost for testing
+CORS(app, resources={r"/": {"origins": ""}}, supports_credentials=True)
 
+# === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# === MODEL ===
 class Shipment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    tracking_code = db.Column(db.String(50), unique=True)
-    shipper_name = db.Column(db.String(100))
+    tracking_code = db.Column(db.String(20), unique=True, nullable=False)
+    shipper_name = db.Column(db.String(120))
     shipper_address = db.Column(db.String(200))
-    receiver_name = db.Column(db.String(100))
+    receiver_name = db.Column(db.String(120))
     receiver_address = db.Column(db.String(200))
     receiver_phone = db.Column(db.String(50))
-    receiver_email = db.Column(db.String(100))
-    origin = db.Column(db.String(100))
-    destination = db.Column(db.String(100))
-    status = db.Column(db.String(50))
+    receiver_email = db.Column(db.String(120))
+    origin = db.Column(db.String(120))
+    destination = db.Column(db.String(120))
     carrier = db.Column(db.String(50))
-    type_of_shipment = db.Column(db.String(100))
+    shipment_type = db.Column(db.String(50))
     weight = db.Column(db.String(50))
     shipment_mode = db.Column(db.String(50))
-    carrier_ref_no = db.Column(db.String(50))
-    product = db.Column(db.String(100))
+    carrier_ref_no = db.Column(db.String(100))
+    product = db.Column(db.String(200))
     qty = db.Column(db.Integer)
     payment_mode = db.Column(db.String(50))
     total_freight = db.Column(db.String(50))
@@ -37,80 +39,99 @@ class Shipment(db.Model):
     departure_time = db.Column(db.String(50))
     pickup_date = db.Column(db.String(50))
     pickup_time = db.Column(db.String(50))
-    comments = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    comments = db.Column(db.String(500))
+    status = db.Column(db.String(50), default="On Hold")
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
-def generate_tracking_code():
-    return "AWB" + ''.join(random.choices(string.digits, k=12))
+    def to_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.columns}
 
-@app.route('/')
+# === ROUTES ===
+
+@app.route("/")
 def home():
-    return render_template('create_shipment.html')
+    return jsonify({"message": "Stockbridge Express Backend Active"}), 200
 
-@app.route('/create_shipment', methods=['POST'])
+
+# ✅ Create new shipment
+@app.route("/create_shipment", methods=["POST"])
 def create_shipment():
-    data = request.form
-    tracking_code = generate_tracking_code()
+    data = request.get_json()
 
-    shipment = Shipment(
+    # Generate random tracking code
+    tracking_code = "AWB" + ''.join(random.choices(string.digits, k=12))
+
+    new_shipment = Shipment(
         tracking_code=tracking_code,
-        shipper_name=data['shipper_name'],
-        shipper_address=data['shipper_address'],
-        receiver_name=data['receiver_name'],
-        receiver_address=data['receiver_address'],
-        receiver_phone=data['receiver_phone'],
-        receiver_email=data['receiver_email'],
-        origin=data['origin'],
-        destination=data['destination'],
-        status=data['status'],
-        carrier=data['carrier'],
-        type_of_shipment=data['type_of_shipment'],
-        weight=data['weight'],
-        shipment_mode=data['shipment_mode'],
-        carrier_ref_no=data['carrier_ref_no'],
-        product=data['product'],
-        qty=data['qty'],
-        payment_mode=data['payment_mode'],
-        total_freight=data['total_freight'],
-        expected_delivery=data['expected_delivery'],
-        departure_time=data['departure_time'],
-        pickup_date=data['pickup_date'],
-        pickup_time=data['pickup_time'],
-        comments=data['comments']
+        shipper_name=data.get("shipper_name"),
+        shipper_address=data.get("shipper_address"),
+        receiver_name=data.get("receiver_name"),
+        receiver_address=data.get("receiver_address"),
+        receiver_phone=data.get("receiver_phone"),
+        receiver_email=data.get("receiver_email"),
+        origin=data.get("origin"),
+        destination=data.get("destination"),
+        carrier=data.get("carrier"),
+        shipment_type=data.get("shipment_type"),
+        weight=data.get("weight"),
+        shipment_mode=data.get("shipment_mode"),
+        carrier_ref_no=data.get("carrier_ref_no"),
+        product=data.get("product"),
+        qty=data.get("qty"),
+        payment_mode=data.get("payment_mode"),
+        total_freight=data.get("total_freight"),
+        expected_delivery=data.get("expected_delivery"),
+        departure_time=data.get("departure_time"),
+        pickup_date=data.get("pickup_date"),
+        pickup_time=data.get("pickup_time"),
+        comments=data.get("comments"),
+        status=data.get("status", "On Hold")
     )
 
-    db.session.add(shipment)
+    db.session.add(new_shipment)
     db.session.commit()
 
-    return redirect(url_for('view_shipment', tracking_code=shipment.tracking_code))
-    return jsonify ({...}) , 200
-    # ✅ Handle browser preflight requests (CORS)
-@app.route('/create_shipment', methods=['OPTIONS'])
+    return jsonify({
+        "message": "Shipment created successfully",
+        "tracking_code": tracking_code
+    }), 200
+
+
+# ✅ Handle browser CORS preflight requests (OPTIONS)
+@app.route("/create_shipment", methods=["OPTIONS"])
 def shipment_options():
-    return '', 200
+    return "", 200
 
-@app.route('/shipment/<tracking_code>')
-def view_shipment(tracking_code):
-    shipment = Shipment.query.filter_by(tracking_code=tracking_code).first_or_404()
-    return render_template('print_shipment.html', shipment=shipment, editable=False)
 
-@app.route('/update_shipment/<tracking_code>', methods=['GET', 'POST'])
+# ✅ Track shipment by tracking code
+@app.route("/track_shipment/<tracking_code>", methods=["GET"])
+def track_shipment(tracking_code):
+    shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
+    if not shipment:
+        return jsonify({"message": "Shipment not found"}), 404
+    return jsonify({"shipment": shipment.to_dict()}), 200
+
+
+# ✅ Update shipment status or details (Admin)
+@app.route("/update_shipment/<tracking_code>", methods=["PUT"])
 def update_shipment(tracking_code):
-    shipment = Shipment.query.filter_by(tracking_code=tracking_code).first_or_404()
+    data = request.get_json()
+    shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
+    if not shipment:
+        return jsonify({"message": "Shipment not found"}), 404
 
-    if request.method == 'POST':
-        # Update shipment details
-        shipment.status = request.form['status']
-        shipment.origin = request.form['origin']
-        shipment.destination = request.form['destination']
-        shipment.comments = request.form['comments']
-        shipment.expected_delivery = request.form['expected_delivery']
-        db.session.commit()
-        return redirect(url_for('view_shipment', tracking_code=tracking_code))
+    for key, value in data.items():
+        if hasattr(shipment, key):
+            setattr(shipment, key, value)
 
-    return render_template('print_shipment.html', shipment=shipment, editable=True)
+    db.session.commit()
+    return jsonify({"message": "Shipment updated successfully"}), 200
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+
+# === INITIALIZE DATABASE ===
+with app.app_context():
+    db.create_all()
+
+
+if __name__ == "__main__":
     app.run(debug=True)
