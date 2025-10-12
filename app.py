@@ -117,10 +117,24 @@ def shipment_options():
 # ✅ Track shipment by tracking code
 @app.route("/track_shipment/<tracking_code>", methods=["GET"])
 def track_shipment(tracking_code):
-    shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
-    if not shipment:
-        return jsonify({"message": "Shipment not found"}), 404
-    return jsonify({"shipment": shipment.to_dict()}), 200
+    try:
+        shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
+        if not shipment:
+            return jsonify({"message": "Shipment not found"}), 404
+
+        return jsonify({
+            "tracking_code": shipment.tracking_code,
+            "status": shipment.status,
+            "origin": shipment.origin,
+            "destination": shipment.destination,
+            "carrier": shipment.carrier,
+            "expected_delivery": shipment.expected_delivery,
+            "history": []  # empty for now unless you have a History model
+        }), 200
+
+    except Exception as e:
+        print(f"Error tracking shipment: {e}")
+        return jsonify({"message": "Server error"}), 500
 
 
 # ✅ Update shipment status or details (Admin)
