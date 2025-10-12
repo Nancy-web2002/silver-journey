@@ -5,7 +5,7 @@ from datetime import datetime
 import random, string
 
 app = Flask(__name__)
-CORS(app, resources={r"/": {"origins": ""}})
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/shipments.db'  # use SQLite for local; PostgreSQL for Render
