@@ -140,8 +140,6 @@ def track_shipment(tracking_code):
             "history": {h.to_dict()for h in shipment.history}
         }), 200
 
-        return jsonify(shipment.to_dict()), 200
-
     except Exception as e:
         print(f"Error tracking shipment: {e}")
         return jsonify({"message": "Server error"}), 500
