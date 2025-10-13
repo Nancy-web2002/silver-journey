@@ -144,6 +144,8 @@ def update_shipment(tracking_code):
     updated_by = data.get("updated_by", "Admin")
     remarks = data.get("remarks", "")
 
+    date_value = data.get ("date") or datetime.now() .strftime("%Y-%m-%d")
+    time_value = data.get("time") or datetime.now() .strftime("%Y-%m-%d")
     shipment.status = new_status
 
     now = datetime.now()
