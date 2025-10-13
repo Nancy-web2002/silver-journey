@@ -137,7 +137,7 @@ def track_shipment(tracking_code):
             "destination": shipment.destination,
             "carrier": shipment.carrier,
             "expected_delivery": shipment.expected_delivery,
-            
+            "history": {h.to_dict()for h in shipment.history}
         }), 200
 
         return jsonify(shipment.to_dict()), 200
