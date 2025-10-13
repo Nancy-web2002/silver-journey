@@ -137,7 +137,7 @@ def track_shipment(tracking_code):
             "destination": shipment.destination,
             "carrier": shipment.carrier,
             "expected_delivery": shipment.expected_delivery,
-            "history": []  # empty for now unless you have a History model
+            
         }), 200
 
     except Exception as e:
