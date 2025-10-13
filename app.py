@@ -148,7 +148,8 @@ def update_shipment(tracking_code):
     time_value = data.get("time") or datetime.now() .strftime("%Y-%m-%d")
     shipment.status = new_status
 
-    now = datetime.now()
+    now= datetime.now() or data.get ("date") 
+    now= datetime.now() or data.get ("time")
     new_history = ShipmentHistory(
         shipment_id=shipment.id,
         date=now.strftime("%Y-%m-%d"),
