@@ -24,7 +24,7 @@ class Shipment(db.Model):
     destination = db.Column(db.String(100))
     carrier = db.Column(db.String(100))
     expected_delivery = db.Column(db.String(100))
-    history = db.relationship('ShipmentHistory', backref='shipment', lazy=True, cascade="all, delete-orphan")
+    history = db.relationship('ShipmentHistory', backref='shipment', lazy=True, cascade="all, delete-orphan",order_by="desc(ShipmentHistory.id)")
 
     def to_dict(self):
         return {
@@ -179,6 +179,19 @@ def update_shipment(tracking_code):
     db.session.commit()
 
     return jsonify({"message": "Shipment updated successfully"}), 200
+
+@app.route('/debug_history/<tracking_code>')
+def debug_history(tracking_code):
+    shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
+    if not shipment:
+        return jsonify({"message": "Shipment not found"}), 404
+
+    histories = ShipmentHistory.query.filter_by(shipment_id=shipment.id).all()
+    return jsonify({
+        "shipment_id": shipment.id,
+        "history_count": len(histories),
+        "history_records": [h.to_dict() for h in histories]
+    }) 
 
 # === INITIALIZE DATABASE ===
 with app.app_context():
