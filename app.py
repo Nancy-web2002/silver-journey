@@ -6,14 +6,15 @@ import random, string
 
 app = Flask(__name__)
 
-# ✅ Allow both local testing and your deployed frontend
+# === CORS SETUP (Allow both local and deployed frontends) ===
 CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5501", "https://stockbridge-0c44.onrender.com"]}})
+
 # === DATABASE CONFIG ===
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shipments.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# === MODEL ===
+# === MODELS ===
 class Shipment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tracking_code = db.Column(db.String(100), unique=True, nullable=False)
@@ -24,7 +25,7 @@ class Shipment(db.Model):
     destination = db.Column(db.String(100))
     carrier = db.Column(db.String(100))
     expected_delivery = db.Column(db.String(100))
-    history = db.relationship('ShipmentHistory', backref='shipment', lazy=True, cascade="all, delete-orphan",order_by="desc(ShipmentHistory.id)")
+    history = db.relationship('ShipmentHistory', backref='shipment', lazy=True, cascade="all, delete-orphan", order_by="desc(ShipmentHistory.id)")
 
     def to_dict(self):
         return {
@@ -34,7 +35,7 @@ class Shipment(db.Model):
             "destination": self.destination,
             "carrier": self.carrier,
             "expected_delivery": self.expected_delivery,
-            "history": [h.to_dict() for h in self.history]
+            "history": [h.to_dict() for h in self.history]  # ✅ FIXED
         }
 
 
@@ -57,12 +58,15 @@ class ShipmentHistory(db.Model):
             "updated_by": self.updated_by,
             "remarks": self.remarks
         }
+
+# === GLOBAL CORS HEADERS ===
 @app.after_request
 def add_cors_headers(response):
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-    response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+    response.headers.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     return response
+
 
 # === ROUTES ===
 
@@ -71,12 +75,11 @@ def home():
     return jsonify({"message": "Stockbridge Express Backend Active"}), 200
 
 
-# ✅ Create new shipment
+# ✅ CREATE NEW SHIPMENT
 @app.route('/create_shipment', methods=['POST'])
 def create_shipment():
     data = request.get_json()
 
-    # Generate unique tracking code
     tracking_code = "AWB" + ''.join(random.choices(string.digits, k=12))
 
     new_shipment = Shipment(
@@ -93,7 +96,7 @@ def create_shipment():
     db.session.add(new_shipment)
     db.session.commit()
 
-    # Optionally add the first entry in the shipment history
+    # Add initial shipment history
     now = datetime.now()
     first_history = ShipmentHistory(
         shipment_id=new_shipment.id,
@@ -104,7 +107,6 @@ def create_shipment():
         updated_by="Admin",
         remarks="Shipment created"
     )
-
     db.session.add(first_history)
     db.session.commit()
 
@@ -112,17 +114,9 @@ def create_shipment():
         "message": "Shipment created successfully",
         "tracking_code": tracking_code
     }), 201
-# ✅ Handle browser CORS preflight requests (OPTIONS)
-@app.route("/create_shipment", methods=["OPTIONS"])
-def shipment_options():
-    reponse = jsonify({"status": "OK"})
-    reponse.headers.add("Access-Control-Allow-Origin", "*")
-    reponse.headers.add("Access-Control-Allow-Headers", "Content-Type")
-    reponse.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
-    return reponse, 200
 
 
-# ✅ Track shipment by tracking code
+# ✅ TRACK SHIPMENT
 @app.route("/track_shipment/<tracking_code>", methods=["GET"])
 def track_shipment(tracking_code):
     try:
@@ -130,25 +124,14 @@ def track_shipment(tracking_code):
         if not shipment:
             return jsonify({"message": "Shipment not found"}), 404
 
-        return jsonify({
-            "tracking_code": shipment.tracking_code,
-            "status": shipment.status,
-            "origin": shipment.origin,
-            "destination": shipment.destination,
-            "carrier": shipment.carrier,
-            "expected_delivery": shipment.expected_delivery,
-            "history": {h.to_dict()for h in shipment.history}
-        }), 200
+        return jsonify(shipment.to_dict()), 200
 
     except Exception as e:
         print(f"Error tracking shipment: {e}")
         return jsonify({"message": "Server error"}), 500
 
-@app.route("/track_shipment/<tracking_code>", methods=["OPTIONS"])
-def track_shipment_options(tracking_code):
-  return '',200
 
-# ✅ Update shipment status or details (Admin)
+# ✅ UPDATE SHIPMENT
 @app.route('/update_shipment/<tracking_code>', methods=['POST'])
 def update_shipment(tracking_code):
     shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
@@ -161,10 +144,8 @@ def update_shipment(tracking_code):
     updated_by = data.get("updated_by", "Admin")
     remarks = data.get("remarks", "")
 
-    # Update current status
     shipment.status = new_status
 
-    # Add to shipment history
     now = datetime.now()
     new_history = ShipmentHistory(
         shipment_id=shipment.id,
@@ -180,6 +161,8 @@ def update_shipment(tracking_code):
 
     return jsonify({"message": "Shipment updated successfully"}), 200
 
+
+# ✅ DEBUG ROUTE (optional)
 @app.route('/debug_history/<tracking_code>')
 def debug_history(tracking_code):
     shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
@@ -191,12 +174,12 @@ def debug_history(tracking_code):
         "shipment_id": shipment.id,
         "history_count": len(histories),
         "history_records": [h.to_dict() for h in histories]
-    }) 
+    })
+
 
 # === INITIALIZE DATABASE ===
 with app.app_context():
     db.create_all()
-
 
 if __name__ == "__main__":
     app.run(debug=True)
