@@ -123,12 +123,38 @@ def track_shipment(tracking_code):
         shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
         if not shipment:
             return jsonify({"message": "Shipment not found"}), 404
-
-        return jsonify(shipment.to_dict()), 200
+        return jsonify({
+            "tracking_code": shipment.tracking_code,
+            "shipper_name": shipment.shipper_name,
+            "shipper_address": shipment.shipper_address,
+            "receiver_name": shipment.receiver_name,
+            "receiver_address": shipment.receiver_address,
+            "receiver_phone": shipment.receiver_phone,
+            "receiver_email": shipment.receiver_email,
+            "status": shipment.status,
+            "origin": shipment.origin,
+            "destination": shipment.destination,
+            "carrier": shipment.carrier,
+            "type_of_shipment": shipment.type_of_shipment,
+            "weight": shipment.weight,
+            "shipment_mode": shipment.shipment_mode,
+            "carrier_reference_no": shipment.carrier_reference_no,
+            "product": shipment.product,
+            "quantity": shipment.quantity,
+            "payment_mode": shipment.payment_mode,
+            "total_freight": shipment.total_freight,
+            "expected_delivery": shipment.expected_delivery,
+            "departure_time": shipment.departure_time,
+            "pickup_date": shipment.pickup_date,
+            "pickup_time": shipment.pickup_time,
+            "comments": shipment.comments,
+            "history": [h.to_dict() for h in shipment.history]
+        }), 200
 
     except Exception as e:
-        print(f"Error tracking shipment: {e}")
-        return jsonify({"message": "Server error"}), 500
+     print(f"Error tracking shipment: {e}")
+    return jsonify({"message": "Server error"}), 500
+
 
 
 # ✅ UPDATE SHIPMENT
