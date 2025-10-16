@@ -155,7 +155,7 @@ def create_shipment():
 
     # Optionally add the first history entry
     now = datetime.now()
-    first_history = ShipmentHistoryid(
+    first_history = ShipmentHistory(
         shipment_id=new_shipment.id,
         date=now.strftime("%Y-%m-%d"),
         time=now.strftime("%I:%M %p"),

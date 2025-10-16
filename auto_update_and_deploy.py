@@ -20,7 +20,7 @@ shipment = Shipment.query.filter_by(tracking_code=TRACKING_CODE).first()
 if not shipment:
     print(f"❌ Shipment with code {TRACKING_CODE} not found.")
     exit()
-h = ShipmentHistoryid(
+h = ShipmentHistory(
     shipment_id=shipment.id,
     **NEW_HISTORY
 )
