@@ -1,3 +1,4 @@
+
 import os
 from datetime import datetime
 from app import db, Shipment, ShipmentHistory
@@ -19,8 +20,7 @@ shipment = Shipment.query.filter_by(tracking_code=TRACKING_CODE).first()
 if not shipment:
     print(f"❌ Shipment with code {TRACKING_CODE} not found.")
     exit()
-
-h = ShipmentHistory(
+h = ShipmentHistoryid(
     shipment_id=shipment.id,
     **NEW_HISTORY
 )

@@ -155,7 +155,7 @@ def create_shipment():
 
     # Optionally add the first history entry
     now = datetime.now()
-    first_history = ShipmentHistory(
+    first_history = ShipmentHistoryid(
         shipment_id=new_shipment.id,
         date=now.strftime("%Y-%m-%d"),
         time=now.strftime("%I:%M %p"),
@@ -184,6 +184,7 @@ def track_shipment(tracking_code):
         # Server-side log — check your logs if errors occur
         print(f"Error tracking shipment: {e}")
         return jsonify({"message": "Server error"}), 500
+        
 
 # UPDATE SHIPMENT
 @app.route('/update_shipment/<tracking_code>', methods=['POST'])
