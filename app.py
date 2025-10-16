@@ -153,7 +153,7 @@ def track_shipment(tracking_code):
 
     except Exception as e:
      print(f"Error tracking shipment: {e}")
-    return jsonify({"message": "Server error"}), 500
+    return jsonify({"message": "Server error"}), 200
 
 
 
