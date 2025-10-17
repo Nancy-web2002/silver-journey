@@ -241,37 +241,37 @@ def debug_history(tracking_code):
     })
 
 # OPTIONAL: add a sample shipment for testing (uncomment to use)
-# @app.route('/add_sample_shipment')
-# def add_sample_shipment():
-#     sample = Shipment(
-#         tracking_code="AWB824373517914",
-#         shipper_name="John Smith",
-#         shipper_address="123 Warehouse Rd, London",
-#         receiver_name="Maria Rossi",
-#         receiver_address="45 Via Roma, Milan",
-#         receiver_phone="+39 334 567 8910",
-#         receiver_email="maria@example.com",
-#         status="In Transit",
-#         origin="London, UK",
-#         destination="Milan, Italy",
-#         carrier="StockBridge Express",
-#         type_of_shipment="Air Freight",
-#         weight="23kg",
-#         shipment_mode="Air",
-#         carrier_reference_no="REF123456",
-#         product="Electronics",
-#         quantity="2",
-#         payment_mode="Prepaid",
-#         total_freight="$150",
-#         expected_delivery="2025-10-15",
-#         departure_time="10:00 AM",
-#         pickup_date="2025-10-10",
-#         pickup_time="9:00 AM",
-#         comments="Package cleared customs"
-#     )
-#     db.session.add(sample)
-#     db.session.commit()
-#     return jsonify({"message":"sample added"})
+@app.route('/add_sample_shipment')
+def add_sample_shipment():
+    sample = Shipment(
+    tracking_code="AWB824373517914",
+     shipper_name="John Smith",
+     shipper_address="123 Warehouse Rd, London",
+     receiver_name="Maria Rossi",
+       receiver_address="45 Via Roma, Milan",
+      receiver_phone="+39 334 567 8910",
+       receiver_email="maria@example.com",
+       status="In Transit",
+       origin="London, UK",
+        destination="Milan, Italy",
+        carrier="StockBridge Express",
+        type_of_shipment="Air Freight",
+        weight="23kg",
+       shipment_mode="Air",
+      carrier_reference_no="REF123456",
+        product="Electronics",
+       quantity="2",
+        payment_mode="Prepaid",
+        total_freight="$150",
+      expected_delivery="2025-10-15",
+        departure_time="10:00 AM",
+        pickup_date="2025-10-10",
+        pickup_time="9:00 AM",
+        comments="Package cleared customs"
+   )
+    db.session.add(sample)
+    db.session.commit()
+    return jsonify({"message":"sample added"})
 
 # INITIALIZE DB
 with app.app_context():
