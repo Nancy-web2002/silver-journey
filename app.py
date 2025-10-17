@@ -276,9 +276,43 @@ def add_sample_shipment():
 # INITIALIZE DB
 with app.app_context():
     db.create_all()
-with app.app_context():
+
+    # Create or get sample shipment
     shipment = Shipment.query.filter_by(tracking_code="AWB824373517914").first()
-    if shipment:
+    if not shipment:
+        shipment = Shipment(
+            tracking_code="AWB824373517914",
+            shipper_name="John Smith",
+            shipper_address="123 Warehouse Rd, London",
+            receiver_name="Maria Rossi",
+            receiver_address="45 Via Roma, Milan",
+            receiver_phone="+39 334 567 8910",
+            receiver_email="maria@example.com",
+            status="In Transit",
+            origin="London, UK",
+            destination="Milan, Italy",
+            carrier="StockBridge Express",
+            type_of_shipment="Air Freight",
+            weight="23kg",
+            shipment_mode="Air",
+            carrier_reference_no="REF123456",
+            product="Electronics",
+            quantity="2",
+            payment_mode="Prepaid",
+            total_freight="$150",
+            expected_delivery="2025-10-15",
+            departure_time="10:00 AM",
+            pickup_date="2025-10-10",
+            pickup_time="9:00 AM",
+            comments="Package cleared customs"
+        )
+        db.session.add(shipment)
+        db.session.commit()
+
+        print("✅ Sample shipment created.")
+
+    # Add test history entry (only if none exist)
+    if not ShipmentHistory.query.filter_by(shipment_id=shipment.id).first():
         new_history = ShipmentHistory(
             shipment_id=shipment.id,
             date="2025-10-16",
@@ -291,8 +325,7 @@ with app.app_context():
         db.session.add(new_history)
         db.session.commit()
         print("✅ Added test history to shipment.")
-    else:
-        print("❌ Shipment not found.")
+        
 if __name__ == "__main__":
     app.run(debug=True)
 
