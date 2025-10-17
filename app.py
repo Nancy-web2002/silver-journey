@@ -208,7 +208,7 @@ def update_shipment(tracking_code):
     shipment.status = new_status
 
     # Add new history record
-    new_history = ShipmentHistory.id(
+    new_history = ShipmentHistory(
         shipment_id=shipment.id,
         date=date_value,
         time=time_value,
