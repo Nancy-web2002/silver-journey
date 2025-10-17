@@ -276,6 +276,23 @@ def debug_history(tracking_code):
 # INITIALIZE DB
 with app.app_context():
     db.create_all()
-
+with app.app_context():
+    shipment = Shipment.query.filter_by(tracking_code="AWB824373517914").first()
+    if shipment:
+        new_history = ShipmentHistory(
+            shipment_id=shipment.id,
+            date="2025-10-16",
+            time="3:30 PM",
+            location="Berlin, Germany",
+            status="In Transit",
+            updated_by="Admin",
+            remarks="Package arrived in Berlin sorting center"
+        )
+        db.session.add(new_history)
+        db.session.commit()
+        print("✅ Added test history to shipment.")
+    else:
+        print("❌ Shipment not found.")
 if __name__ == "__main__":
     app.run(debug=True)
+
