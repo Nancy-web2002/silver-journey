@@ -194,30 +194,26 @@ def update_shipment(tracking_code):
         return jsonify({"message": "Shipment not found"}), 404
 
     data = request.get_json() or {}
-    new_location = data.get("location")
-    new_status = data.get("status")
+    new_location = data.get("location", "Unknown Location")
+    new_status = data.get("status", shipment.status or "Pending")
     updated_by = data.get("updated_by", "Admin")
-    remarks = data.get("remarks", "")
+    remarks = data.get("remarks", "Status updated")
 
-    # Accept optional date/time from client, otherwise use server datetime
     date_value = data.get("date") or datetime.now().strftime("%Y-%m-%d")
     time_value = data.get("time") or datetime.now().strftime("%I:%M %p")
 
-    # Update current status if provided
-    if new_status:
-        shipment.status = new_status
+    print(f"🟢 Updating {tracking_code}: {new_status} at {new_location}")
 
-    # Optionally update other shipment-level fields if provided
-    # e.g., shipment.origin = data.get("origin", shipment.origin)
-    # (You can add more updates here as needed)
+    # Update main shipment status
+    shipment.status = new_status
 
-    # Create history entry using date_value/time_value
-    new_history = ShipmentHistory(
+    # Add new history record
+    new_history = ShipmentHistory.id(
         shipment_id=shipment.id,
         date=date_value,
         time=time_value,
-        location=new_location or "",
-        status=new_status or shipment.status,
+        location=new_location,
+        status=new_status,
         updated_by=updated_by,
         remarks=remarks
     )
@@ -225,7 +221,6 @@ def update_shipment(tracking_code):
     db.session.commit()
 
     return jsonify({"message": "Shipment updated successfully"}), 200
-
 # DEBUG: list history for a shipment
 @app.route('/debug_history/<tracking_code>')
 def debug_history(tracking_code):
@@ -243,7 +238,7 @@ def debug_history(tracking_code):
 # OPTIONAL: add a sample shipment for testing (uncomment to use)
 @app.route('/add_sample_shipment')
 def add_sample_shipment():
-    sample = Shipment(
+    sample = Shipment.id(
     tracking_code="AWB824373517914",
      shipper_name="John Smith",
      shipper_address="123 Warehouse Rd, London",
@@ -280,7 +275,7 @@ with app.app_context():
     # Create or get sample shipment
     shipment = Shipment.query.filter_by(tracking_code="AWB824373517914").first()
     if not shipment:
-        shipment = Shipment(
+        shipment = Shipment.id(
             tracking_code="AWB824373517914",
             shipper_name="John Smith",
             shipper_address="123 Warehouse Rd, London",
@@ -313,7 +308,7 @@ with app.app_context():
 
     # Add test history entry (only if none exist)
     if not ShipmentHistory.query.filter_by(shipment_id=shipment.id).first():
-        new_history = ShipmentHistory(
+        new_history = ShipmentHistory.id(
             shipment_id=shipment.id,
             date="2025-10-16",
             time="3:30 PM",
@@ -325,7 +320,7 @@ with app.app_context():
         db.session.add(new_history)
         db.session.commit()
         print("✅ Added test history to shipment.")
-        
+
 if __name__ == "__main__":
     app.run(debug=True)
 
