@@ -238,7 +238,7 @@ def debug_history(tracking_code):
 # OPTIONAL: add a sample shipment for testing (uncomment to use)
 @app.route('/add_sample_shipment')
 def add_sample_shipment():
-    sample = Shipment.id(
+    sample = Shipment(
     tracking_code="AWB824373517914",
      shipper_name="John Smith",
      shipper_address="123 Warehouse Rd, London",
@@ -275,7 +275,7 @@ with app.app_context():
     # Create or get sample shipment
     shipment = Shipment.query.filter_by(tracking_code="AWB824373517914").first()
     if not shipment:
-        shipment = Shipment.id(
+        shipment = Shipment(
             tracking_code="AWB824373517914",
             shipper_name="John Smith",
             shipper_address="123 Warehouse Rd, London",
@@ -308,7 +308,7 @@ with app.app_context():
 
     # Add test history entry (only if none exist)
     if not ShipmentHistory.query.filter_by(shipment_id=shipment.id).first():
-        new_history = ShipmentHistory.id(
+        new_history = ShipmentHistory(
             shipment_id=shipment.id,
             date="2025-10-16",
             time="3:30 PM",
