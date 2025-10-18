@@ -176,21 +176,15 @@ def track_shipment(tracking_code):
         shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
         if not shipment:
             return jsonify({"message": "Shipment not found"}), 404
-         
 
-        # Return full dict (to_dict handles history)
-        return jsonify({
-            "message": "success",
-            "shipment": shipment_data,
-            "history_count": len(shipment.history),
-            "history_records":[h.to_dict()for h in shipment.history]
-        }),200
+        # ✅ Convert shipment to dict (includes history)
+        shipment_data = shipment.to_dict()
+
+        return jsonify(shipment_data), 200
 
     except Exception as e:
-        # Server-side log — check your logs if errors occur
         print(f"Error in track_shipment: {e}")
-        return jsonify({"message": "Server error"}), 500
-        
+        return jsonify({"message": "Server error"}), 500        
 
 # UPDATE SHIPMENT
 @app.route('/update_shipment/<tracking_code>', methods=['POST'])
