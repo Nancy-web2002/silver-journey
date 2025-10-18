@@ -176,7 +176,7 @@ def track_shipment(tracking_code):
         shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
         if not shipment:
             return jsonify({"message": "Shipment not found"}), 404
-         shipment_data =shipment.to_dict()
+         
 
         # Return full dict (to_dict handles history)
         return jsonify({
