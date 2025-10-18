@@ -88,10 +88,10 @@ class ShipmentHistory(db.Model):
     shipment_id = db.Column(db.Integer, db.ForeignKey('shipment.id'), nullable=False)
     date = db.Column(db.String(50))
     time = db.Column(db.String(50))
-    location = db.Column(db.String(100))
+    location = db.Column(db.String(200))
     status = db.Column(db.String(100))
     updated_by = db.Column(db.String(100))
-    remarks = db.Column(db.String(200))
+    remarks = db.Column(db.String(300))
 
     def to_dict(self):
         return {
@@ -176,13 +176,19 @@ def track_shipment(tracking_code):
         shipment = Shipment.query.filter_by(tracking_code=tracking_code).first()
         if not shipment:
             return jsonify({"message": "Shipment not found"}), 404
+         shipment_data =shipment.to_dict()
 
         # Return full dict (to_dict handles history)
-        return jsonify(shipment.to_dict()), 200
+        return jsonify({
+            "message": "success",
+            "shipment": shipment_data,
+            "history_count": len(shipment.history),
+            "history_records":[h.to_dict()for h in shipment.history]
+        }),200
 
     except Exception as e:
         # Server-side log — check your logs if errors occur
-        print(f"Error tracking shipment: {e}")
+        print(f"Error in track_shipment: {e}")
         return jsonify({"message": "Server error"}), 500
         
 
@@ -202,10 +208,9 @@ def update_shipment(tracking_code):
     date_value = data.get("date") or datetime.now().strftime("%Y-%m-%d")
     time_value = data.get("time") or datetime.now().strftime("%I:%M %p")
 
-    print(f"🟢 Updating {tracking_code}: {new_status} at {new_location}")
-
-    # Update main shipment status
-    shipment.status = new_status
+    if new_status: shipment.status=new_status
+    if new_location: shipment.destination=new_location
+    db.session.commit()
 
     # Add new history record
     new_history = ShipmentHistory(
@@ -220,7 +225,10 @@ def update_shipment(tracking_code):
     db.session.add(new_history)
     db.session.commit()
 
-    return jsonify({"message": "Shipment updated successfully"}), 200
+    return jsonify({"message": "Shipment updated successfully",
+    "tracking_code":tracking_code,
+    "status": shipment.status
+    }), 200
 # DEBUG: list history for a shipment
 @app.route('/debug_history/<tracking_code>')
 def debug_history(tracking_code):
